@@ -9,35 +9,71 @@ import CalendarView from './pages/CalendarView';
 import FocusTimer from './pages/FocusTimer';
 import Statistics from './pages/Statistics';
 
-const INITIAL_COURSES = [
-  { id: '1', title: 'Urdu', code: 'URD', color: '#EF4444' },
-  { id: '2', title: 'English', code: 'ENG', color: '#8B5CF6' },
-  { id: '3', title: 'Maths', code: 'MTH', color: '#10B981' },
-  { id: '4', title: 'Physics', code: 'PHY', color: '#F59E0B' },
-  { id: '5', title: 'Computer', code: 'CS', color: '#3B82F6' },
-  { id: '6', title: 'Pak Studies', code: 'PST', color: '#EC4899' },
-];
-
-const INITIAL_ASSIGNMENTS = [
-  { id: '101', title: 'Physics Chapter 4 Numerical Problems', course_id: '4', due_date: '2026-10-22', priority: 'high', completed: false },
-  { id: '102', title: 'Maths Integration Exercise 3.2', course_id: '3', due_date: '2026-10-25', priority: 'medium', completed: false },
-];
-
 export default function App() {
   const { user, signOut } = useAuth();
-  const [localUser, setLocalUser] = useState(null);
+  
+  // Persistent local user session
+  const [localUser, setLocalUser] = useState(() => {
+    const saved = localStorage.getItem('syncademics_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const activeUser = user || localUser;
+  const userId = activeUser?.id || activeUser?.email || 'guest';
 
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [courses, setCourses] = useState(INITIAL_COURSES);
-  const [assignments, setAssignments] = useState(INITIAL_ASSIGNMENTS);
 
-  // Clean initial state for subject stopwatches (0s for all subjects)
-  const [subjectSeconds, setSubjectSeconds] = useState({
-    1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0
+  // Load saved courses or start with empty/clean state for end-users
+  const [courses, setCourses] = useState(() => {
+    const saved = localStorage.getItem(`syncademics_courses_${userId}`);
+    if (saved) return JSON.parse(saved);
+    // Clean default user courses
+    return [
+      { id: '1', title: 'Urdu', code: 'URD', color: '#EF4444' },
+      { id: '2', title: 'English', code: 'ENG', color: '#8B5CF6' },
+      { id: '3', title: 'Maths', code: 'MTH', color: '#10B981' },
+      { id: '4', title: 'Physics', code: 'PHY', color: '#F59E0B' },
+      { id: '5', title: 'Computer', code: 'CS', color: '#3B82F6' },
+      { id: '6', title: 'Pak Studies', code: 'PST', color: '#EC4899' },
+    ];
   });
+
+  // Load saved assignments (starts empty so only user-created tasks exist)
+  const [assignments, setAssignments] = useState(() => {
+    const saved = localStorage.getItem(`syncademics_assignments_${userId}`);
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Load saved stopwatch and focus times
+  const [subjectSeconds, setSubjectSeconds] = useState(() => {
+    const saved = localStorage.getItem(`syncademics_seconds_${userId}`);
+    return saved ? JSON.parse(saved) : { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+  });
+
   const [activeTimerId, setActiveTimerId] = useState(null);
 
-  // Active stopwatch ticker
+  // Automatically save state changes to localStorage whenever the user makes modifications
+  useEffect(() => {
+    if (activeUser) {
+      localStorage.setItem('syncademics_user', JSON.stringify(activeUser));
+    } else {
+      localStorage.removeItem('syncademics_user');
+    }
+  }, [activeUser]);
+
+  useEffect(() => {
+    localStorage.setItem(`syncademics_courses_${userId}`, JSON.stringify(courses));
+  }, [courses, userId]);
+
+  useEffect(() => {
+    localStorage.setItem(`syncademics_assignments_${userId}`, JSON.stringify(assignments));
+  }, [assignments, userId]);
+
+  useEffect(() => {
+    localStorage.setItem(`syncademics_seconds_${userId}`, JSON.stringify(subjectSeconds));
+  }, [subjectSeconds, userId]);
+
+  // Real-time stopwatch ticker
   useEffect(() => {
     let interval = null;
     if (activeTimerId !== null) {
@@ -53,8 +89,7 @@ export default function App() {
 
   const totalCumulativeSeconds = Object.values(subjectSeconds).reduce((a, b) => a + b, 0);
 
-  const activeUser = user || localUser;
-
+  // If user is not authenticated, show login screen
   if (!activeUser) {
     return <AuthScreen onLoginSuccess={(userData) => setLocalUser(userData)} />;
   }
@@ -67,6 +102,7 @@ export default function App() {
         user={activeUser}
         onSignOut={() => {
           setLocalUser(null);
+          localStorage.removeItem('syncademics_user');
           signOut();
         }}
       />
@@ -87,7 +123,6 @@ export default function App() {
         {activeTab === 'timer' && (
           <FocusTimer
             onSaveLog={(addedSecs) => {
-              // Add completed focus timer session into General Subject 1
               setSubjectSeconds((prev) => ({ ...prev, 1: (prev[1] || 0) + addedSecs }));
             }}
           />

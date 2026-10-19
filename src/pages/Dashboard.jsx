@@ -1,15 +1,16 @@
 import React from 'react';
 import { BookOpen, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 
-export default function Dashboard({ assignments, courses, totalFocusSeconds }) {
+export default function Dashboard({ assignments, courses, totalFocusSeconds = 0 }) {
   const pendingAssignments = assignments.filter((a) => !a.completed);
   const completedAssignments = assignments.filter((a) => a.completed);
 
-  // Format real-time seconds into readable hours/minutes format
-  const formatTimeDisplay = (totalSecs) => {
-    if (totalSecs <= 0) return '0.0 hrs';
-    const hrs = (totalSecs / 3600).toFixed(1);
-    return `${hrs} hrs`;
+  // Format real-time seconds into exact HH:MM:SS format matching the Statistics page
+  const formatHMS = (secs = 0) => {
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -46,14 +47,14 @@ export default function Dashboard({ assignments, courses, totalFocusSeconds }) {
           <div className="mt-2 text-3xl font-extrabold text-white">{courses.length}</div>
         </div>
 
-        {/* Dynamic Total Study Time connected live to Statistics */}
+        {/* Real-time Total Study Time formatted as exact 00:00:00 */}
         <div className="bg-[#1A1A1E] border border-[#2A2A30] rounded-2xl p-5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Study Time</span>
             <Clock className="w-5 h-5 text-[#FF6B00]" />
           </div>
-          <div className="mt-2 text-3xl font-extrabold text-white">
-            {formatTimeDisplay(totalFocusSeconds)}
+          <div className="mt-2 text-3xl font-extrabold font-mono text-white">
+            {formatHMS(totalFocusSeconds)}
           </div>
         </div>
       </div>
@@ -84,7 +85,7 @@ export default function Dashboard({ assignments, courses, totalFocusSeconds }) {
           </div>
         </div>
 
-        {/* Enrolled Courses (Target hours removed) */}
+        {/* Enrolled Courses */}
         <div className="bg-[#1A1A1E] border border-[#2A2A30] rounded-2xl p-6">
           <h2 className="text-lg font-bold text-white mb-4">Enrolled Courses</h2>
           <div className="space-y-3">

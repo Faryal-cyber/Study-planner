@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, User, Image as ImageIcon, Sparkles, LogIn, UserPlus, Play } from 'lucide-react';
+import { Mail, Lock, User, Image as ImageIcon, Sparkles, LogIn, UserPlus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export default function AuthScreen({ onLoginSuccess }) {
@@ -15,7 +15,7 @@ export default function AuthScreen({ onLoginSuccess }) {
     e.preventDefault();
     setError('');
 
-    // Instant Guest/Local Mode if Supabase isn't configured
+    // Fallback if Supabase is not configured
     if (!supabase) {
       onLoginSuccess({
         id: 'local-user',
@@ -62,17 +62,6 @@ export default function AuthScreen({ onLoginSuccess }) {
     }
   };
 
-  const handleQuickDemoLogin = () => {
-    onLoginSuccess({
-      id: 'demo-user',
-      email: 'rasib@studyflow.app',
-      user_metadata: {
-        full_name: fullName || 'Rasib',
-        avatar_url: pfpUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      },
-    });
-  };
-
   return (
     <div className="min-h-screen bg-[#0F0F10] flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background Decorative Blur Rings */}
@@ -84,7 +73,7 @@ export default function AuthScreen({ onLoginSuccess }) {
           <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-[#FF6B00]/10 text-[#FF6B00] mb-3">
             <Sparkles className="w-8 h-8" />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Welcome to StudyFlow</h1>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Welcome to Syncademics</h1>
           <p className="text-xs text-gray-400 mt-1">Please sign in to access your study planner</p>
         </div>
 
@@ -167,16 +156,6 @@ export default function AuthScreen({ onLoginSuccess }) {
             {loading ? 'Processing...' : isSignUp ? 'Create Account' : 'Sign In'}
           </button>
         </form>
-
-        {/* Quick Bypass / Demo Login button */}
-        <div className="mt-3">
-          <button
-            onClick={handleQuickDemoLogin}
-            className="w-full bg-[#2A2A30] text-gray-200 py-2.5 rounded-xl text-xs font-semibold hover:bg-[#3A3A40] transition flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <Play className="w-3.5 h-3.5 text-[#FF6B00]" /> Quick Enter (Bypass Login)
-          </button>
-        </div>
 
         <div className="mt-6 text-center">
           <button
